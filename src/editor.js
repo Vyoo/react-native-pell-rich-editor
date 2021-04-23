@@ -396,7 +396,7 @@ const HTML = `
             onChange: function (){
                 clearTimeout(_handleCTime);
                 _handleCTime = setTimeout(function(){
-                    var html = { content: Actions.content.getHtml() };
+                    var html = Actions.content.getHtml();
                     postAction({type: 'CONTENT_CHANGE', data: {html} });
                 }, 50);
             }
