@@ -141,17 +141,35 @@ export default class RichTextEditor extends Component {
           this.props.onBodyHeightChange?.(message.data);
           break;
         case messages.CONTENT_PASTED: {
-          this.props.onPaste && this.props.onPaste(message.data.text);
+          const content = message.data.text || message.data.html;
+          this.props.onPaste && this.props.onPaste(content);
+
+          const regexp = /(?:(?:https?|ftp):\/\/)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:\/\S*)?/i;
+
+          const found = content.match(regexp);
+
+          if (found) {
+           this.props.onLinkDetected?.(found[0]);
+          }
           break;
         }
         case messages.CONTENT_CHANGE:
-          const { onActivateTagging, onActivateHashTagging, onChange } = this.props;
+          const { onActivateTagging, onActivateHashTagging, onChange, onLinkDetected } = this.props;
           const { taggingActive, hashTaggingActive, tagText, hashTagText } = this.state;
 
           onChange && onChange(message.data.html);
 
+          const regexp = /^(?:(?:https?|ftp):\/\/)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:\/\S*)?$/i;
+
           if (!PlatformIOS) {
-            const contentLastWord = message.data.content.split('\n').pop().split(/(\s+)/).pop();
+            const words = message.data.content.split('\n').pop().split(/(\s+)/);
+            const contentLastWord = words.pop();
+            const prevWord = words.length > 1 ? words[words.length - 2] : '';
+
+            if (contentLastWord == '' && regexp.test(prevWord)) {
+              onLinkDetected?.(prevWord);
+            }
+
             if (contentLastWord === '@') {
               onActivateTagging?.(true, '');
               this.setState({
@@ -200,10 +218,16 @@ export default class RichTextEditor extends Component {
             break;
           }
 
-          const content = message.data.content.trim();
+          const content = message.data.content?.trim();
           const offset = message.data.key.length > 1 ? 1 : 2;
           const lastChar = content.length > 1 ? content.substr(content.length - offset, 1) : '';
           //alert(JSON.stringify(message.data));
+          const contentLastChar = message.data.content[message.data.content.length - 1];
+          const prevWord = content.split(/(\s+)/).pop();
+          if (contentLastChar.trim() === '' && regexp.test(prevWord)) {
+            onLinkDetected?.(prevWord);
+          }
+          
           if (lastChar !== '@' && message.data.key === '@') {
             onActivateTagging && onActivateTagging(true, '');
             this.setState({
