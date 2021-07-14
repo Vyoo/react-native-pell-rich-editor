@@ -362,7 +362,8 @@ const HTML = `
             });
             addEventListener(content, 'paste', function (e) {
                 // get text representation of clipboard
-                var text = (e.originalEvent || e).clipboardData.getData('text/html');
+                // var text = (e.originalEvent || e).clipboardData.getData('text/html');
+                var text = (e.originalEvent || e).clipboardData.getData('text');
                 postAction({type: 'CONTENT_PASTED', data: { text }});
             });
             
