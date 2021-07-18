@@ -195,6 +195,7 @@ export default class RichTextEditor extends Component {
 
             if (contentLastWord === '#') {
               onActivateHashTagging?.(true, '');
+              this.setBold();
               this.setState({
                 hashTaggingActive: true,
                 hashTagText: '',
@@ -202,6 +203,7 @@ export default class RichTextEditor extends Component {
             } else if (hashTaggingActive) {
               if (!contentLastWord.includes('#')) {
                 onActivateHashTagging?.(false, '');
+                this.setBold();
                 this.setState({
                   hashTaggingActive: false,
                   hashTagText: '',
@@ -209,6 +211,7 @@ export default class RichTextEditor extends Component {
               } else {
                 const text = contentLastWord.replace('#', '');
                 onActivateHashTagging?.(true, text);
+                this.setBold();
                 this.setState({
                   hashTaggingActive: true,
                   hashTagText: text,
@@ -254,14 +257,20 @@ export default class RichTextEditor extends Component {
 
           if (lastChar !== '#' && message.data.key === '#') {
             onActivateHashTagging && onActivateHashTagging(true, '');
+            this.setBold();
             this.setState({
               hashTaggingActive: true,
               hashTagText: '',
             });
-          } else if (hashTaggingActive && message.data.keyCode === 13) {
+          } else if (hashTaggingActive && (message.data.keyCode === 13 || message.data.keyCode === 32)) {
             // enter key, select first connection in list
             const text = hashTagText + '\n';
             onActivateHashTagging && onActivateHashTagging(false, text, true);
+            this.setBold();
+            this.setState({
+              hashTaggingActive: false,
+              hashTagText: text,
+            });
           } else if (onActivateHashTagging && message.data.key !== 'Shift' && message.data.keyCode !== 32) {
             // if not space, continue with tagging
             // if backspace, but not deleting @, continue with tagging
@@ -385,6 +394,10 @@ export default class RichTextEditor extends Component {
   focusContentEditor() {
     this.showAndroidKeyboard();
     this._sendAction(actions.content, "focus");
+  }
+
+  setBold() {
+    this._sendAction(actions.setBold, 'result');
   }
 
   showAndroidKeyboard() {
